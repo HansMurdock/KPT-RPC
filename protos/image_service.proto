@@ -1,0 +1,80 @@
+syntax = "proto3";
+
+package imageprocessing;
+
+// Enum status pekerjaan pengolahan citra
+enum JobStatus {
+  STATUS_UNKNOWN = 0;
+  STATUS_QUEUED = 1;
+  STATUS_PROCESSING = 2;
+  STATUS_COMPLETED = 3;
+  STATUS_FAILED = 4;
+  STATUS_CANCELLED = 5;
+}
+
+// Metadata informasi file gambar yang diunggah
+message ImageMetadata {
+  string request_id = 1;  // ID unik untuk idempotensi / deduplikasi (UUIDv4)
+  string filename = 2;    // Nama asli file (e.g. foto.jpg)
+  string file_format = 3; // Format citra (e.g. JPEG, PNG)
+  int64 file_size = 4;    // Total ukuran file dalam bytes
+}
+
+// Request upload: pesan pertama mengirim metadata, pesan selanjutnya mengirim byte chunks
+message UploadChunk {
+  oneof payload {
+    ImageMetadata metadata = 1;
+    bytes chunk_data = 2;
+  }
+}
+
+// Response setelah seluruh chunk upload diterima oleh server
+message UploadResponse {
+  bool success = 1;
+  string job_id = 2;
+  string message = 3;
+  JobStatus status = 4;
+}
+
+// Request untuk menanyakan status pengerjaan
+message StatusRequest {
+  string job_id = 1;
+}
+
+// Response status pengerjaan citra
+message StatusResponse {
+  string job_id = 1;
+  JobStatus status = 2;
+  int32 progress_percent = 3;
+  string message = 4;
+  string filename = 5;
+  int64 timestamp = 6;
+}
+
+// Request untuk mengunduh hasil citra grayscale
+message DownloadRequest {
+  string job_id = 1;
+}
+
+// Response download: server mengirim gambar hasil konversi per potongan chunk
+message DownloadChunk {
+  string filename = 1;
+  bytes chunk_data = 2;
+  bool is_last_chunk = 3;
+  int64 total_bytes = 4;
+}
+
+// Definisi Layanan Pengolahan Gambar Berbasis gRPC
+service ImageService {
+  // 1. Client Streaming: Client mengunggah gambar per chunk (64KB) ke server
+  rpc UploadGambar (stream UploadChunk) returns (UploadResponse);
+
+  // 2. Unary: Client mengecek status pekerjaan berdasarkan job_id
+  rpc CekStatus (StatusRequest) returns (StatusResponse);
+
+  // 3. Server Streaming: Server mengirimkan update status secara langsung (real-time stream)
+  rpc PantauStatus (StatusRequest) returns (stream StatusResponse);
+
+  // 4. Server Streaming: Client mengunduh gambar hasil grayscale per chunk
+  rpc UnduhGambar (DownloadRequest) returns (stream DownloadChunk);
+}
