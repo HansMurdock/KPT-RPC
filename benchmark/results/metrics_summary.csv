@@ -1,0 +1,4 @@
+num_clients,total_jobs,total_rpcs,total_time_s,avg_latency_ms,min_latency_ms,p95_latency_ms,max_latency_ms,throughput_jobs_s,throughput_rpcs_s,errors
+1,20,80,1.93,96.41,91.39,101.03,104.71,10.36,41.46,0
+5,20,80,0.42,103.77,98.12,108.05,108.61,47.65,190.6,0
+20,20,80,0.223,159.61,114.53,209.98,211.13,89.68,358.72,0

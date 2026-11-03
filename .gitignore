@@ -45,6 +45,9 @@ client/downloads/*
 benchmark/results/*.png
 benchmark/results/*.csv
 !benchmark/results/.gitkeep
+!benchmark/results/grafik_kinerja_kelompok.png
+!benchmark/results/perbandingan_grayscale.png
+!benchmark/results/metrics_summary.csv
 
 # ==============================================================
 # Berkas Tugas Mandiri (Praktikum Individu Khansa)
