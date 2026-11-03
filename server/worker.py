@@ -98,7 +98,8 @@ class ImageJobManager:
         job_id: str,
         filename: str,
         file_format: str,
-        raw_bytes: bytes,
+        staged_input_path: str,
+        input_size: int,
     ) -> tuple[JobRecord, bool]:
         """
         Mendaftarkan pekerjaan baru secara atomik dengan deduplikasi request_id.
@@ -106,39 +107,47 @@ class ImageJobManager:
         Jika request_id sudah pernah terdaftar (akibat retry client), fungsi ini
         langsung mengembalikan JobRecord lama tanpa membuat antrean ganda.
         """
+        duplicate_record = None
         with self._lock:
             if request_id and request_id in self._request_to_job:
                 existing_job_id = self._request_to_job[request_id]
                 self._duplicate_hits += 1
-                return self._jobs[existing_job_id], True
+                duplicate_record = JobRecord(**self._jobs[existing_job_id].__dict__)
+            else:
+                safe_name = os.path.basename(filename) or "image.jpg"
+                input_path = os.path.join(self.input_dir, f"{job_id}_{safe_name}")
+                output_path = os.path.join(self.output_dir, f"{job_id}_grayscale_{safe_name}")
 
-            safe_name = os.path.basename(filename) or "image.jpg"
-            input_path = os.path.join(self.input_dir, f"{job_id}_{safe_name}")
-            output_path = os.path.join(self.output_dir, f"{job_id}_grayscale_{safe_name}")
+                # File sementara berada di direktori yang sama agar os.replace atomik.
+                os.replace(staged_input_path, input_path)
 
-            # Simpan bytes gambar yang diunggah ke disk
-            with open(input_path, "wb") as f:
-                f.write(raw_bytes)
+                record = JobRecord(
+                    job_id=job_id,
+                    request_id=request_id,
+                    filename=safe_name,
+                    file_format=file_format or "JPEG",
+                    input_path=input_path,
+                    output_path=output_path,
+                    status=pb.STATUS_QUEUED,
+                    progress_percent=10,
+                    message="Gambar berhasil diunggah dan masuk antrean pemrosesan",
+                    input_size=input_size,
+                )
+                self._jobs[job_id] = record
+                if request_id:
+                    self._request_to_job[request_id] = job_id
+                queued_record = JobRecord(**record.__dict__)
 
-            record = JobRecord(
-                job_id=job_id,
-                request_id=request_id,
-                filename=safe_name,
-                file_format=file_format or "JPEG",
-                input_path=input_path,
-                output_path=output_path,
-                status=pb.STATUS_QUEUED,
-                progress_percent=10,
-                message="Gambar berhasil diunggah dan masuk antrean pemrosesan",
-                input_size=len(raw_bytes),
-            )
-            self._jobs[job_id] = record
-            if request_id:
-                self._request_to_job[request_id] = job_id
+        if duplicate_record is not None:
+            try:
+                os.remove(staged_input_path)
+            except FileNotFoundError:
+                pass
+            return duplicate_record, True
 
         # Masukkan job_id ke dalam antrean asinkron
         self._queue.put(job_id)
-        return record, False
+        return queued_record, False
 
     def get_job(self, job_id: str) -> Optional[JobRecord]:
         """Mengambil salinan informasi JobRecord secara thread-safe."""

@@ -9,6 +9,7 @@ TIM         : Zaki, Rafa, Khansa Rasendriya Aji (247006111132)
 
 import argparse
 import os
+import tempfile
 import time
 import uuid
 from concurrent import futures
@@ -38,43 +39,90 @@ class ImageServiceServicer(pb_grpc.ImageServiceServicer):
     def UploadGambar(self, request_iterator, context):
         """
         1. Client Streaming RPC:
-        Menerima aliran UploadChunk (pesan pertama berisi ImageMetadata,
-        pesan berikutnya berisi potongan byte chunk_data), melakukan deduplikasi
-        berdasarkan request_id (semantik At-Most-Once), menyimpan file, dan
-        memasukkan pekerjaan ke antrean worker asinkron.
+        Menerima aliran UploadChunk dan menulis data langsung ke file sementara,
+        sehingga seluruh gambar tidak perlu ditahan di RAM. Setelah upload valid,
+        file dipindahkan ke storage job dan pekerjaan dimasukkan ke antrean.
         """
         metadata = None
-        buffer = bytearray()
+        request_id = ""
+        total_bytes = 0
+        staged_input_path = None
 
-        for chunk in request_iterator:
-            payload_type = chunk.WhichOneof("payload")
-            if payload_type == "metadata":
-                metadata = chunk.metadata
-            elif payload_type == "chunk_data":
-                buffer.extend(chunk.chunk_data)
+        try:
+            with tempfile.NamedTemporaryFile(
+                mode="wb",
+                prefix="upload-",
+                suffix=".part",
+                dir=self.job_manager.input_dir,
+                delete=False,
+            ) as staged_file:
+                staged_input_path = staged_file.name
 
-        if metadata is None:
-            context.abort(
-                grpc.StatusCode.INVALID_ARGUMENT,
-                "Metadata gambar wajib dikirimkan pada chunk pertama.",
+                for chunk_index, chunk in enumerate(request_iterator):
+                    payload_type = chunk.WhichOneof("payload")
+
+                    if chunk_index == 0:
+                        if payload_type != "metadata":
+                            context.abort(
+                                grpc.StatusCode.INVALID_ARGUMENT,
+                                "Pesan pertama upload harus berisi metadata gambar.",
+                            )
+                        metadata = chunk.metadata
+                        request_id = metadata.request_id.strip()
+                        if not request_id:
+                            context.abort(
+                                grpc.StatusCode.INVALID_ARGUMENT,
+                                "request_id wajib diisi agar retry dapat dideduplikasi.",
+                            )
+                        continue
+
+                    if payload_type == "metadata":
+                        context.abort(
+                            grpc.StatusCode.INVALID_ARGUMENT,
+                            "Metadata gambar hanya boleh dikirim sekali, pada pesan pertama.",
+                        )
+                    if payload_type != "chunk_data":
+                        context.abort(
+                            grpc.StatusCode.INVALID_ARGUMENT,
+                            "Setiap pesan setelah metadata harus berisi chunk_data.",
+                        )
+
+                    if chunk.chunk_data:
+                        staged_file.write(chunk.chunk_data)
+                        total_bytes += len(chunk.chunk_data)
+
+            if metadata is None:
+                context.abort(
+                    grpc.StatusCode.INVALID_ARGUMENT,
+                    "Upload harus berisi metadata gambar dan data citra.",
+                )
+            if total_bytes == 0:
+                context.abort(
+                    grpc.StatusCode.INVALID_ARGUMENT,
+                    "Data byte gambar kosong (0 bytes).",
+                )
+            if metadata.file_size and metadata.file_size != total_bytes:
+                context.abort(
+                    grpc.StatusCode.INVALID_ARGUMENT,
+                    f"Ukuran data upload ({total_bytes} bytes) tidak cocok dengan metadata "
+                    f"({metadata.file_size} bytes).",
+                )
+
+            new_job_id = f"JOB-{uuid.uuid4().hex[:8].upper()}"
+            record, is_dup = self.job_manager.register_or_get_job(
+                request_id=request_id,
+                job_id=new_job_id,
+                filename=metadata.filename,
+                file_format=metadata.file_format,
+                staged_input_path=staged_input_path,
+                input_size=total_bytes,
             )
-
-        if len(buffer) == 0:
-            context.abort(
-                grpc.StatusCode.INVALID_ARGUMENT,
-                "Data byte gambar kosong (0 bytes).",
-            )
-
-        request_id = metadata.request_id.strip() or str(uuid.uuid4())
-        new_job_id = f"JOB-{uuid.uuid4().hex[:8].upper()}"
-
-        record, is_dup = self.job_manager.register_or_get_job(
-            request_id=request_id,
-            job_id=new_job_id,
-            filename=metadata.filename,
-            file_format=metadata.file_format,
-            raw_bytes=bytes(buffer),
-        )
+            # ImageJobManager telah memindahkan file atau menghapus file duplikat.
+            staged_input_path = None
+        finally:
+            # Hapus upload parsial jika client putus atau validasi gagal.
+            if staged_input_path and os.path.exists(staged_input_path):
+                os.remove(staged_input_path)
 
         # Jika mode simulasi timeout aktif untuk pengujian retry & deduplikasi:
         # Permintaan pertama ditunda melewati batas timeout client setelah job terdaftar
@@ -267,8 +315,11 @@ def main():
         server.wait_for_termination()
     except KeyboardInterrupt:
         print("\n[SHUTDOWN] Menghentikan worker dan server gRPC...")
+    finally:
+        # Hentikan penerimaan RPC dahulu agar tidak ada job baru masuk saat
+        # worker sedang menerima sentinel untuk shutdown.
+        server.stop(grace=2.0).wait()
         job_manager.stop_workers()
-        server.stop(grace=2.0)
 
 
 if __name__ == "__main__":
