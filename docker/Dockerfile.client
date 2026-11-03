@@ -1,0 +1,14 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY protos/ ./protos/
+COPY client/ ./client/
+COPY benchmark/ ./benchmark/
+
+RUN python -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. protos/image_service.proto
+
+CMD ["python", "-m", "client.client", "--target", "grpc-image-server:50051", "--action", "full-pipeline", "--file", "client/samples/sample.jpg", "--output", "client/downloads/docker_grayscale.jpg"]

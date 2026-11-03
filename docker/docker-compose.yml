@@ -1,0 +1,30 @@
+version: "3.9"
+
+services:
+  grpc-image-server:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.server
+    container_name: kpt-rpc-server
+    ports:
+      - "50051:50051"
+    networks:
+      - kpt-rpc-net
+    volumes:
+      - ../server/storage:/app/server/storage
+
+  grpc-image-client:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.client
+    container_name: kpt-rpc-client
+    depends_on:
+      - grpc-image-server
+    networks:
+      - kpt-rpc-net
+    volumes:
+      - ../client/downloads:/app/client/downloads
+
+networks:
+  kpt-rpc-net:
+    driver: bridge
