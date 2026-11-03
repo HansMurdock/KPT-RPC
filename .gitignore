@@ -46,6 +46,19 @@ benchmark/results/*.png
 benchmark/results/*.csv
 !benchmark/results/.gitkeep
 
+# ==============================================================
+# Berkas Tugas Mandiri (Praktikum Individu Khansa)
+# Mencegah file tugas pribadi tercampur atau ter-push ke repo kelompok
+# ==============================================================
+tugas_mandiri/
+*tugas_mandiri*
+*tugas-mandiri*
+*Praktikum-RPC*
+Khansa_*
+247006111132_*
+*.docx
+*.pdf
+
 # OS generated files
 .DS_Store
 Thumbs.db
