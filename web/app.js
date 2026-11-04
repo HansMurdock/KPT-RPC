@@ -99,8 +99,6 @@
     document.querySelectorAll('[data-view-link]').forEach((link) => {
       if (link.classList.contains('nav-link')) link.classList.toggle('active', link.dataset.viewLink === name);
     });
-    const crumb = { overview: 'Overview', jobs: 'Job queue', benchmark: 'Benchmark', architecture: 'RPC architecture' };
-    $('current-crumb').textContent = crumb[name] || 'Overview';
     if (name === 'jobs') renderJobsTable();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -221,7 +219,9 @@
   }
 
   function renderActivity() {
-    $('activity-feed').innerHTML = state.events.length ? state.events.slice(0, 5).map((event) => `<span class="activity-item"><span class="activity-time">${fmtTime(event.time)}</span> <span class="activity-event">${esc(event.message)}</span></span>`).join('') : '<span class="activity-empty">Menunggu event pertama...</span>';
+    const feed = $('activity-feed');
+    if (!feed) return;
+    feed.innerHTML = state.events.length ? state.events.slice(0, 5).map((event) => `<span class="activity-item"><span class="activity-time">${fmtTime(event.time)}</span> <span class="activity-event">${esc(event.message)}</span></span>`).join('') : '<span class="activity-empty">Menunggu event pertama...</span>';
   }
 
   function filteredJobs() {
@@ -705,9 +705,6 @@
     $('active-only').addEventListener('change', renderJobsTable);
     $('run-benchmark').addEventListener('click', runBenchmark);
     $('reset-button').addEventListener('click', resetSimulation);
-    $('help-button').addEventListener('click', () => $('help-dialog').showModal());
-    $('close-help').addEventListener('click', () => $('help-dialog').close());
-    $('close-help-bottom').addEventListener('click', () => $('help-dialog').close());
   }
 
   async function init() {

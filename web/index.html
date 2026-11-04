@@ -16,43 +16,22 @@
         <span class="brand-mark" aria-hidden="true">
           <svg viewBox="0 0 36 36" fill="none"><path d="M18 3.5 31 11v14L18 32.5 5 25V11L18 3.5Z" stroke="currentColor" stroke-width="1.5"/><path d="m11 14 7-4 7 4v8l-7 4-7-4v-8Z" stroke="currentColor" stroke-width="1.5"/><path d="M18 10v16m-7-12 14 8m0-8-14 8" stroke="currentColor" stroke-width="1.2" opacity=".7"/></svg>
         </span>
-        <span class="brand-copy"><strong>KPT<span>·</span>RPC</strong><small>IMAGE QUEUE LAB</small></span>
+        <span class="brand-copy"><strong>Image Queue</strong><small>DISTRIBUTED RPC SYSTEM</small></span>
       </a>
 
-      <div class="workspace-label">WORKSPACE</div>
-      <div class="workspace-switcher"><span class="workspace-dot"></span><span>Case 05 · Image queue</span><span class="chevron">⌄</span></div>
-
       <nav class="side-nav" aria-label="Navigasi utama">
-        <div class="nav-group-label">OPERATIONS</div>
-        <button class="nav-link active" data-view-link="overview"><span class="nav-icon">◫</span><span>Overview</span><span class="nav-indicator"></span></button>
-        <button class="nav-link" data-view-link="jobs"><span class="nav-icon">▤</span><span>Job queue</span><span class="nav-count" id="nav-job-count">0</span></button>
-        <button class="nav-link" data-view-link="benchmark"><span class="nav-icon">⌁</span><span>Benchmark</span></button>
-        <div class="nav-group-label nav-group-spaced">REFERENCE</div>
-        <button class="nav-link" data-view-link="architecture"><span class="nav-icon">⌘</span><span>RPC architecture</span></button>
+        <button class="nav-link active" aria-label="Overview" data-view-link="overview"><span class="nav-icon">◫</span><span>Overview</span><span class="nav-indicator"></span></button>
+        <button class="nav-link" aria-label="History" data-view-link="jobs"><span class="nav-icon">▤</span><span>History</span><span class="nav-count" id="nav-job-count">0</span></button>
+        <button class="nav-link" aria-label="Benchmark" data-view-link="benchmark"><span class="nav-icon">⌁</span><span>Benchmark</span></button>
+        <button class="nav-link" aria-label="RPC Architecture" data-view-link="architecture"><span class="nav-icon">⌘</span><span>RPC Architecture</span></button>
       </nav>
-
-      <div class="sidebar-bottom">
-        <div class="sim-card"><span class="sim-pulse"></span><div><b>SIMULATION MODE</b><small>Browser-local · no gRPC connection</small></div></div>
-        <div class="sidebar-user"><div class="avatar">K</div><div><b>KPT Project</b><small>Distributed systems</small></div><button class="more-button" aria-label="More options">···</button></div>
-      </div>
     </aside>
 
     <main class="main-shell">
-      <header class="topbar">
-        <div class="mobile-brand"><span class="brand-mark small-mark">⌘</span><b>KPT·RPC</b></div>
-        <div class="breadcrumbs"><span>Workspace</span><span class="crumb-sep">/</span><b id="current-crumb">Overview</b></div>
-        <div class="topbar-right">
-          <span class="simulation-badge"><i></i> LOCAL SIMULATION</span>
-          <span class="top-divider"></span>
-          <button class="icon-button" id="help-button" title="About this simulator" aria-label="About this simulator">?</button>
-          <div class="avatar avatar-small">K</div>
-        </div>
-      </header>
-
       <div class="content-wrap">
         <section class="view active" id="view-overview" aria-labelledby="overview-title">
           <div class="page-heading heading-row">
-            <div><div class="eyebrow"><span class="eyebrow-line"></span> DISTRIBUTED IMAGE PROCESSING · CASE 05</div><h1 id="overview-title">Image jobs, <span>in motion.</span></h1><p class="page-subtitle">Jelajahi alur upload streaming, antrean thread-safe, worker pool, dan pemrosesan gambar.</p></div>
+            <div><h1 id="overview-title">Image jobs, <span>in motion.</span></h1><p class="page-subtitle">Jelajahi alur upload streaming, antrean thread-safe, worker pool, dan pemrosesan gambar.</p></div>
             <button class="button button-quiet" id="reset-button"><span>↻</span> Reset simulation</button>
           </div>
 
@@ -106,7 +85,7 @@
 
             <div class="right-stack">
               <article class="panel job-focus-panel">
-                <div class="panel-heading compact-heading"><div><div class="section-kicker">LIVE JOB STATUS</div><h2>Processing timeline</h2></div><button class="text-button" id="open-jobs">All jobs <span>↗</span></button></div>
+                <div class="panel-heading compact-heading"><div><div class="section-kicker">LIVE JOB STATUS</div><h2>Processing timeline</h2></div><button class="text-button" id="open-jobs">History <span>↗</span></button></div>
                 <div class="empty-job" id="empty-job"><div class="empty-orbit"><span>◌</span></div><b>Belum ada job aktif</b><p>Upload gambar untuk memulai simulasi RPC.</p></div>
                 <div class="focus-job" id="focus-job" hidden>
                   <div class="focus-job-head"><div><span class="job-id-label">JOB ID</span><strong id="focus-job-id">JOB-XXXXXXXX</strong></div><span class="status-badge queued" id="focus-status"><i></i> QUEUED</span></div>
@@ -133,17 +112,21 @@
           </div>
 
           <div class="lower-grid">
-            <article class="panel jobs-preview-panel"><div class="panel-heading compact-heading"><div><div class="section-kicker">SERVER REGISTRY</div><h2>Recent jobs</h2></div><button class="text-button" data-view-link="jobs">View all <span>↗</span></button></div><div class="recent-list" id="recent-list"><div class="empty-inline">Job yang dikirim akan tampil di sini.</div></div></article>
+            <article class="panel jobs-preview-panel"><div class="panel-heading compact-heading"><div><div class="section-kicker">SERVER REGISTRY</div><h2>Recent jobs</h2></div><button class="text-button" data-view-link="jobs">History <span>↗</span></button></div><div class="recent-list" id="recent-list"><div class="empty-inline">Job yang dikirim akan tampil di sini.</div></div></article>
             <article class="panel rpc-panel"><div class="panel-heading compact-heading"><div><div class="section-kicker">CLIENT INTERCEPTOR · AOP</div><h2>RPC telemetry</h2></div><span class="live-label"><i></i> LIVE</span></div><div class="telemetry-stats"><div><span>RPC calls</span><b id="rpc-total">0</b></div><div><span>Success</span><b id="rpc-success">0</b></div><div><span>Avg latency</span><b id="rpc-latency">—</b></div></div><div class="rpc-table-wrap"><table class="rpc-table"><thead><tr><th>METHOD</th><th>TYPE</th><th>RESULT</th><th>LATENCY</th></tr></thead><tbody id="rpc-log-body"><tr><td colspan="4" class="empty-table">Belum ada pemanggilan RPC.</td></tr></tbody></table></div></article>
           </div>
-          <div class="activity-bar"><div class="activity-title"><span class="activity-pulse"></span><b>ACTIVITY STREAM</b><small>simulated server events</small></div><div class="activity-feed" id="activity-feed"><span class="activity-empty">Menunggu event pertama...</span></div></div>
         </section>
 
         <section class="view" id="view-jobs" aria-labelledby="jobs-title">
-          <div class="page-heading heading-row"><div><div class="eyebrow"><span class="eyebrow-line"></span> SERVER REGISTRY · LISTJOBS</div><h1 id="jobs-title">Job <span>queue.</span></h1><p class="page-subtitle">Daftar pekerjaan, filter status, pantau progres, batalkan, atau unduh hasil.</p></div><button class="button button-secondary" id="refresh-jobs">↻ Refresh ListJobs</button></div>
+          <div class="page-heading heading-row"><div><h1 id="jobs-title">Processing <span>history.</span></h1><p class="page-subtitle">Riwayat pekerjaan, progres, hasil filter gambar, dan detail request.</p></div><button class="button button-secondary" id="refresh-jobs">↻ Refresh history</button></div>
           <div class="jobs-page-stats"><div><span>ALL JOBS</span><b id="jobs-all-count">0</b></div><div><span>ACTIVE</span><b id="jobs-active-count">0</b></div><div><span>FAILED</span><b id="jobs-failed-count">0</b></div><div><span>DEDUP HITS</span><b id="dedup-count">0</b></div></div>
-          <div class="panel jobs-table-panel"><div class="table-toolbar"><div class="filter-controls"><label class="search-box"><span>⌕</span><input id="job-search" type="search" placeholder="Cari job ID atau filename"></label><select id="job-status-filter" class="dark-select"><option value="all">All statuses</option><option value="QUEUED">Queued</option><option value="PROCESSING">Processing</option><option value="COMPLETED">Completed</option><option value="FAILED">Failed</option><option value="CANCELLED">Cancelled</option></select><label class="checkbox-filter"><input id="active-only" type="checkbox"><span>Active only</span></label></div><span class="table-rpc-tag">UNARY · ListJobs</span></div><div class="table-scroll"><table class="jobs-table"><thead><tr><th>JOB</th><th>STATUS</th><th>FILTER</th><th>PROGRESS</th><th>SIZE</th><th>CREATED</th><th>ACTIONS</th></tr></thead><tbody id="jobs-table-body"><tr><td colspan="7" class="empty-table">Belum ada pekerjaan. Kembali ke Overview untuk upload.</td></tr></tbody></table></div><div class="table-footer"><span id="jobs-table-summary">Menampilkan 0 jobs</span><span>Request ID cache · process memory</span></div></div>
-          <div class="job-detail-grid"><article class="panel detail-panel"><div class="panel-heading compact-heading"><div><div class="section-kicker">SELECTED RECORD</div><h2>Job detail</h2></div><span class="rpc-tag">CekStatus · unary</span></div><div id="job-detail-content" class="detail-empty">Pilih satu job dari tabel untuk melihat detailnya.</div></article><article class="panel result-panel"><div class="panel-heading compact-heading"><div><div class="section-kicker">IMAGE OUTPUT</div><h2>Before / after</h2></div><span class="result-type" id="result-type">No output</span></div><div class="image-compare" id="image-compare"><div class="compare-empty"><span>▧</span><b>Hasil muncul setelah job selesai</b><small>Output dikirim lewat stream UnduhGambar.</small></div></div></article></div>
+          <div class="history-layout">
+            <article class="panel jobs-table-panel"><div class="table-toolbar"><div class="filter-controls"><label class="search-box"><span>⌕</span><input id="job-search" type="search" placeholder="Cari job ID atau filename"></label><select id="job-status-filter" class="dark-select"><option value="all">All statuses</option><option value="QUEUED">Queued</option><option value="PROCESSING">Processing</option><option value="COMPLETED">Completed</option><option value="FAILED">Failed</option><option value="CANCELLED">Cancelled</option></select><label class="checkbox-filter"><input id="active-only" type="checkbox"><span>Active only</span></label></div><span class="table-rpc-tag">UNARY · ListJobs</span></div><div class="table-scroll"><table class="jobs-table"><thead><tr><th>JOB</th><th>STATUS</th><th>FILTER</th><th>PROGRESS</th><th>SIZE</th><th>CREATED</th><th>ACTIONS</th></tr></thead><tbody id="jobs-table-body"><tr><td colspan="7" class="empty-table">Belum ada riwayat. Kembali ke Overview untuk upload.</td></tr></tbody></table></div><div class="table-footer"><span id="jobs-table-summary">Menampilkan 0 jobs</span><span>Request ID cache · process memory</span></div></article>
+            <div class="history-side">
+              <article class="panel result-panel"><div class="panel-heading compact-heading"><div><div class="section-kicker">IMAGE OUTPUT</div><h2>Before / after</h2></div><span class="result-type" id="result-type">No output</span></div><div class="image-compare" id="image-compare"><div class="compare-empty"><span>▧</span><b>Hasil muncul setelah job selesai</b><small>Output dikirim lewat stream UnduhGambar.</small></div></div></article>
+              <article class="panel detail-panel"><div class="panel-heading compact-heading"><div><div class="section-kicker">SELECTED RECORD</div><h2>Job detail</h2></div><span class="rpc-tag">CekStatus · unary</span></div><div id="job-detail-content" class="detail-empty">Pilih satu job dari tabel untuk melihat detailnya.</div></article>
+            </div>
+          </div>
         </section>
 
         <section class="view" id="view-benchmark" aria-labelledby="benchmark-title">
@@ -177,12 +160,10 @@
           <div class="sim-disclaimer"><span>ⓘ</span><p><b>Simulation scope:</b> dashboard ini memodelkan komunikasi, queue, status, dan transformasi gambar di browser. Sistem gRPC Python tetap dijalankan terpisah; halaman ini belum mengirim RPC ke server asli.</p></div>
         </section>
 
-        <footer class="page-footer"><span>KPT·RPC <i>—</i> Parallel & Distributed Computing</span><span>Study case 05 <i>·</i> Image processing queue</span></footer>
       </div>
     </main>
   </div>
 
   <div class="toast-stack" id="toast-stack" aria-live="polite"></div>
-  <dialog class="help-dialog" id="help-dialog"><div class="dialog-head"><div><div class="section-kicker">ABOUT THIS PAGE</div><h2>RPC image queue simulator</h2></div><button class="icon-button" id="close-help" aria-label="Close">×</button></div><p>Web ini memperagakan alur proyek KPT-RPC di browser: upload chunk, UUID deduplication, job queue, worker pool, enam RPC, filter gambar, dan benchmark model.</p><div class="dialog-callout"><b>Local simulation</b><span>Data job hanya hidup di halaman ini dan tidak dikirim ke server gRPC Python. Untuk pengukuran nyata, jalankan <code>python -m benchmark.benchmark</code>.</span></div><button class="button button-primary dialog-close-button" id="close-help-bottom">Got it</button></dialog>
 </body>
 </html>
