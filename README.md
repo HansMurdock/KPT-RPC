@@ -150,7 +150,11 @@ python -m client.client --action cancel --job-id <JOB_ID>
 
 ## 🖥️ Web Simulator (Dashboard Gelap)
 
-Web simulator memperagakan alur sistem di browser: upload gambar per chunk 64 KB, enam filter citra, UUID retry/deduplikasi, queue dan worker pool, enam metode RPC, status/monitoring, pembatalan, unduhan hasil, telemetry interceptor, topologi Docker, dan model benchmark 1/5/20 client.
+Web simulator adalah dashboard untuk mempelajari alur proyek melalui browser. Simulator menyediakan halaman **Overview**, **History**, **Benchmark**, dan **RPC Architecture**. Pengolahan gambar berjalan di browser menggunakan Canvas API; antrean, worker, status job, telemetry RPC, dan benchmark dimodelkan untuk demonstrasi.
+
+> **Batasan penting:** Web simulator tidak mengirim request ke server gRPC Python, tidak membaca data dari `server/storage`, dan tidak menyimpan riwayat setelah halaman dimuat ulang. Menyalakan server gRPC dan web simulator secara bersamaan tidak menghubungkan keduanya. Untuk menguji backend gRPC yang sebenarnya, gunakan perintah CLI pada bagian **Menjalankan Server & Client Secara Lokal** dan benchmark aktual pada bagian **Hasil Evaluasi Kinerja**.
+
+### Menjalankan web simulator
 
 Jalankan dari root repositori:
 
@@ -158,7 +162,63 @@ Jalankan dari root repositori:
 python -m http.server 8080 --directory web
 ```
 
-Buka `http://localhost:8080`. Dashboard ini berjalan lokal di browser dan **mensimulasikan** RPC; dashboard tidak terhubung ke server gRPC Python. Untuk benchmark server sebenarnya, gunakan `python -m benchmark.benchmark`.
+Buka browser dan akses `http://localhost:8080`. Biarkan terminal server HTTP tetap berjalan selama simulator digunakan. Untuk menghentikannya, tekan `Ctrl+C` di terminal tersebut.
+
+Jika port `8080` sedang digunakan, jalankan di port lain, misalnya:
+
+```bash
+python -m http.server 8081 --directory web
+```
+
+Lalu buka `http://localhost:8081`. Perintah di atas hanya menyajikan file statis dalam folder `web`; tidak perlu mengaktifkan virtual environment atau menginstal dependensi Python proyek terlebih dahulu.
+
+### Alur penggunaan Overview
+
+1. Buka menu **Overview**. Empat kartu ringkasan menunjukkan jumlah job, job yang menunggu, worker aktif dibanding jumlah worker yang dikonfigurasi, dan job selesai pada sesi browser saat ini.
+2. Tambahkan satu atau beberapa gambar melalui tombol **Browse** atau dengan menyeret file ke kotak upload. Simulator menerima berkas bertipe gambar yang dapat dibaca browser; format umum seperti PNG, JPG/JPEG, dan WEBP disarankan. Baris pratinjau menampilkan pilihan file. Tombol **×** menghapus pilihan.
+3. Pilih satu filter sebelum mengirim. Filter yang tersedia adalah **Grayscale**, **Gaussian blur**, **Sepia**, **Invert**, **Edge detect**, dan **Sharpen**. Filter yang dipilih berlaku untuk setiap file dalam satu batch.
+4. Atur **Request ID** bila ingin mengamati deduplikasi. UUID dibuat otomatis untuk upload tunggal jika kolom dibiarkan kosong. Tombol **New UUID** membuat UUID baru. Untuk mengulang request yang sama, gunakan kembali UUID yang sama: simulator akan menunjuk ke job yang sudah terdaftar, alih-alih menambahkan job duplikat. Pada upload beberapa gambar sekaligus, simulator membuat UUID terpisah untuk setiap file.
+5. Secara opsional, aktifkan **Simulasikan timeout pertama** sebelum upload. Simulator memperagakan ACK yang hilang, jeda retry, dan pemakaian ulang UUID agar request tidak membuat job ganda.
+6. Klik **Queue image job**. Progress akan memperagakan pengiriman metadata lalu potongan data berukuran 64 KB. Setelah ACK simulasi diterima, job masuk antrean FIFO dan diproses oleh worker browser. File yang diproses diskalakan bila sisi terpanjangnya melebihi 1.500 piksel agar hasil tetap ringan.
+7. Panel **LIVE JOB STATUS** menampilkan job terpilih dan timeline `Queued → Processing → Completed`. Gunakan:
+   - **CekStatus** untuk memperagakan permintaan status unary.
+   - **Pantau stream** untuk menyalakan atau menghentikan simulasi aliran update status.
+   - **Download** untuk menyimpan hasil setelah job berstatus `COMPLETED`.
+   - **Cancel** untuk membatalkan job yang masih `QUEUED` atau `PROCESSING`.
+8. Panel **BACKGROUND PROCESSING** memperlihatkan worker yang sedang sibuk dan panjang antrean. Pilih jumlah worker `2`, `3`, `4`, `6`, atau `8` saat tidak ada worker yang sedang menjalankan job. Worker yang aktif membuat pilihan jumlah thread dinonaktifkan sementara.
+9. Panel **RPC telemetry** mencatat panggilan simulasi seperti upload, cek status, pantau status, unduh, daftar job, dan pembatalan, beserta tipe, hasil, serta latensi contoh. Angkanya bukan log dari interceptor gRPC yang berjalan di Python.
+
+### Menggunakan halaman History
+
+1. Pilih **History** dari sidebar, atau klik tombol **History** pada panel status.
+2. Daftar menampilkan job yang dibuat selama halaman browser ini masih terbuka. Pilih satu baris untuk menampilkan **IMAGE OUTPUT** (perbandingan input dan hasil) serta **SELECTED RECORD** (ID job, request UUID, filter, status, ukuran, jumlah percobaan/potongan, waktu, dan worker/pesan).
+3. Gunakan kolom pencarian untuk mencari ID job atau nama file. Menu status memfilter berdasarkan status; centang **Active only** untuk menampilkan job yang masih menunggu atau diproses.
+4. **Refresh history** memperagakan RPC `ListJobs` dan merender kembali registry lokal simulator. Tombol **Status**, **↓**, dan **×** pada baris masing-masing menjalankan simulasi cek status, unduhan output, dan pembatalan. Tindakan juga tersedia pada panel LIVE JOB STATUS di Overview.
+5. Tombol unduh aktif setelah pemrosesan selesai. Nama berkas hasil mengikuti pola `<nama-file>-<filter>.png` dan disimpan melalui mekanisme unduhan browser.
+
+### Menggunakan halaman Benchmark
+
+1. Buka menu **Benchmark** lalu klik **Run simulation**.
+2. Halaman membandingkan tiga skenario: `1`, `5`, dan `20` client, masing-masing dengan model `20` job. Grafik menampilkan throughput serta rata-rata dan P95 latency; tabel juga merangkum total waktu, nilai minimum/maksimum, dan jumlah error model.
+3. Hasil dihitung oleh model JavaScript di browser dengan asumsi 8 image worker dan variasi acak kecil. Hasil ini untuk demonstrasi antarmuka dan konsep concurrency; **jangan kutip sebagai hasil pengukuran server**.
+4. Untuk menjalankan benchmark terhadap server gRPC sungguhan, aktifkan server terlebih dahulu lalu jalankan `python -m benchmark.benchmark` dari root repositori. Hasil benchmark Python disimpan di folder `benchmark/results/`.
+
+### Menggunakan halaman RPC Architecture
+
+Buka **RPC Architecture** untuk melihat diagram alur client → server gRPC → antrean thread-safe → worker gambar, ringkasan enam metode RPC, daftar filter yang tersedia, mekanisme keselamatan/concurrency, dan topologi Docker Compose. Halaman ini merupakan dokumentasi visual; diagram tidak mengendalikan proses server atau container.
+
+### Reset dan sesi browser
+
+- Klik **Reset simulation** di Overview untuk menghapus job, antrean, telemetry, penghitung deduplikasi, pilihan request ID, serta hasil grafik benchmark dari simulator.
+- Muat ulang atau tutup tab juga menghapus state simulator karena data disimpan di memori halaman, bukan di server atau penyimpanan permanen.
+- Reset tidak menghapus file apa pun pada `server/storage/` atau `client/downloads/`, sebab simulator browser tidak mengakses direktori tersebut.
+
+### Kendala umum
+
+- Jika `python` tidak dikenali, gunakan instalasi Python 3 dan pastikan perintah Python tersedia di terminal.
+- Jika halaman tidak terbuka, pastikan server HTTP masih berjalan dan URL menggunakan port yang sama dengan perintah, misalnya `http://localhost:8080`.
+- Jika file tidak dapat diproses, coba gambar lain dalam format umum yang didukung browser dan pastikan ukuran file tidak nol.
+- Jika hasil benchmark web berbeda dari tabel hasil proyek, itu wajar: web menjalankan model demo, sedangkan `benchmark/benchmark.py` melakukan panggilan ke backend gRPC.
 
 ---
 
