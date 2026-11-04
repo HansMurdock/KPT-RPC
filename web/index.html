@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0a0d12">
+  <meta name="description" content="Dashboard simulasi sistem antrean pengolahan gambar terdistribusi berbasis gRPC.">
+  <title>KPT-RPC — Image Queue Simulator</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="brand" href="#overview" aria-label="KPT RPC home" data-view-link="overview">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 36 36" fill="none"><path d="M18 3.5 31 11v14L18 32.5 5 25V11L18 3.5Z" stroke="currentColor" stroke-width="1.5"/><path d="m11 14 7-4 7 4v8l-7 4-7-4v-8Z" stroke="currentColor" stroke-width="1.5"/><path d="M18 10v16m-7-12 14 8m0-8-14 8" stroke="currentColor" stroke-width="1.2" opacity=".7"/></svg>
+        </span>
+        <span class="brand-copy"><strong>KPT<span>·</span>RPC</strong><small>IMAGE QUEUE LAB</small></span>
+      </a>
+
+      <div class="workspace-label">WORKSPACE</div>
+      <div class="workspace-switcher"><span class="workspace-dot"></span><span>Case 05 · Image queue</span><span class="chevron">⌄</span></div>
+
+      <nav class="side-nav" aria-label="Navigasi utama">
+        <div class="nav-group-label">OPERATIONS</div>
+        <button class="nav-link active" data-view-link="overview"><span class="nav-icon">◫</span><span>Overview</span><span class="nav-indicator"></span></button>
+        <button class="nav-link" data-view-link="jobs"><span class="nav-icon">▤</span><span>Job queue</span><span class="nav-count" id="nav-job-count">0</span></button>
+        <button class="nav-link" data-view-link="benchmark"><span class="nav-icon">⌁</span><span>Benchmark</span></button>
+        <div class="nav-group-label nav-group-spaced">REFERENCE</div>
+        <button class="nav-link" data-view-link="architecture"><span class="nav-icon">⌘</span><span>RPC architecture</span></button>
+      </nav>
+
+      <div class="sidebar-bottom">
+        <div class="sim-card"><span class="sim-pulse"></span><div><b>SIMULATION MODE</b><small>Browser-local · no gRPC connection</small></div></div>
+        <div class="sidebar-user"><div class="avatar">K</div><div><b>KPT Project</b><small>Distributed systems</small></div><button class="more-button" aria-label="More options">···</button></div>
+      </div>
+    </aside>
+
+    <main class="main-shell">
+      <header class="topbar">
+        <div class="mobile-brand"><span class="brand-mark small-mark">⌘</span><b>KPT·RPC</b></div>
+        <div class="breadcrumbs"><span>Workspace</span><span class="crumb-sep">/</span><b id="current-crumb">Overview</b></div>
+        <div class="topbar-right">
+          <span class="simulation-badge"><i></i> LOCAL SIMULATION</span>
+          <span class="top-divider"></span>
+          <button class="icon-button" id="help-button" title="About this simulator" aria-label="About this simulator">?</button>
+          <div class="avatar avatar-small">K</div>
+        </div>
+      </header>
+
+      <div class="content-wrap">
+        <section class="view active" id="view-overview" aria-labelledby="overview-title">
+          <div class="page-heading heading-row">
+            <div><div class="eyebrow"><span class="eyebrow-line"></span> DISTRIBUTED IMAGE PROCESSING · CASE 05</div><h1 id="overview-title">Image jobs, <span>in motion.</span></h1><p class="page-subtitle">Jelajahi alur upload streaming, antrean thread-safe, worker pool, dan pemrosesan gambar.</p></div>
+            <button class="button button-quiet" id="reset-button"><span>↻</span> Reset simulation</button>
+          </div>
+
+          <div class="stat-grid">
+            <article class="stat-card"><div class="stat-top"><span class="stat-label">TOTAL JOBS</span><span class="stat-icon cyan">▤</span></div><div class="stat-value" id="stat-total">00</div><div class="stat-foot"><span class="stat-dot cyan-bg"></span><span>terdaftar di sesi ini</span></div></article>
+            <article class="stat-card"><div class="stat-top"><span class="stat-label">IN QUEUE</span><span class="stat-icon amber">◷</span></div><div class="stat-value" id="stat-queued">00</div><div class="stat-foot"><span class="stat-dot amber-bg"></span><span>menunggu worker</span></div></article>
+            <article class="stat-card"><div class="stat-top"><span class="stat-label">ACTIVE WORKERS</span><span class="stat-icon violet">⠿</span></div><div class="stat-value"><span id="stat-workers">0</span><small class="stat-denom">/ <span id="stat-worker-cap">4</span></small></div><div class="stat-foot"><span class="stat-dot violet-bg"></span><span>background pool</span></div></article>
+            <article class="stat-card"><div class="stat-top"><span class="stat-label">COMPLETED</span><span class="stat-icon green">✓</span></div><div class="stat-value" id="stat-completed">00</div><div class="stat-foot"><span class="stat-dot green-bg"></span><span id="stat-success-copy">siap diunduh</span></div></article>
+          </div>
+
+          <div class="dashboard-grid">
+            <article class="panel upload-panel">
+              <div class="panel-heading"><div><div class="section-kicker">CLIENT STREAMING</div><h2>Submit image job</h2><p>Gambar dikirim sebagai potongan byte 64 KB.</p></div><span class="rpc-tag">UploadGambar</span></div>
+              <label class="dropzone" id="dropzone" for="image-input">
+                <input id="image-input" type="file" accept="image/*" multiple hidden>
+                <div class="drop-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M4 14v5h16v-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                <div class="drop-copy"><strong id="file-title">Drop an image here</strong><span id="file-subtitle">or <em>browse files</em> · PNG, JPG, WEBP</span></div>
+                <span class="drop-browse">Browse</span>
+              </label>
+
+              <div class="selected-file-row" id="selected-file-row">
+                <div class="mini-preview"><img id="input-preview" alt="Pratinjau gambar yang akan diproses"></div>
+                <div class="file-meta"><strong id="selected-name">kpt-demo.png</strong><span id="selected-info">Demo image · siap dikirim</span></div>
+                <button class="icon-button remove-file" id="clear-files" title="Clear selected files" aria-label="Clear selected files">×</button>
+              </div>
+
+              <div class="subsection-heading"><span>PROCESSING FILTER</span><span class="subtle-note">Pilih satu filter</span></div>
+              <div class="filter-grid" id="filter-grid">
+                <button class="filter-option selected" data-filter="grayscale"><span class="filter-swatch swatch-gray">◐</span><span><b>Grayscale</b><small>Mode L · default</small></span><span class="filter-check">✓</span></button>
+                <button class="filter-option" data-filter="blur"><span class="filter-swatch swatch-blue">◌</span><span><b>Gaussian blur</b><small>Radius 3 px</small></span><span class="filter-check">✓</span></button>
+                <button class="filter-option" data-filter="sepia"><span class="filter-swatch swatch-sepia">◒</span><span><b>Sepia</b><small>Warm tone</small></span><span class="filter-check">✓</span></button>
+                <button class="filter-option" data-filter="invert"><span class="filter-swatch swatch-pink">◑</span><span><b>Invert</b><small>Color negative</small></span><span class="filter-check">✓</span></button>
+                <button class="filter-option" data-filter="edge"><span class="filter-swatch swatch-violet">⌁</span><span><b>Edge detect</b><small>Find edges</small></span><span class="filter-check">✓</span></button>
+                <button class="filter-option" data-filter="sharpen"><span class="filter-swatch swatch-green">✳</span><span><b>Sharpen</b><small>Detail boost</small></span><span class="filter-check">✓</span></button>
+              </div>
+
+              <div class="upload-options">
+                <label class="field-label" for="request-id">REQUEST ID <span>UUID · deduplication key</span></label>
+                <div class="input-with-action"><input id="request-id" type="text" spellcheck="false" placeholder="Dibuat otomatis untuk upload baru"><button class="text-button" id="new-uuid">New UUID</button></div>
+                <div class="option-row"><label class="toggle-label"><input id="simulate-timeout" type="checkbox"><span class="toggle"></span><span><b>Simulasikan timeout pertama</b><small>Retry exponential backoff · ID tetap sama</small></span></label><span class="attempt-pill">max 3 attempts</span></div>
+              </div>
+
+              <div class="upload-progress-wrap" id="upload-progress-wrap" hidden>
+                <div class="progress-label"><span id="upload-progress-label">Mempersiapkan upload...</span><span id="upload-progress-percent">0%</span></div>
+                <div class="progress-track"><span id="upload-progress-bar"></span></div>
+                <div class="chunk-caption"><span id="chunk-caption">metadata → chunks</span><span>64 KB / chunk</span></div>
+              </div>
+              <button class="button button-primary upload-button" id="upload-button"><span class="button-spark">↗</span><span id="upload-button-label">Queue image job</span><span class="button-arrow">→</span></button>
+              <div class="upload-footnote"><span class="mini-lock">⌑</span> Server menyimpan stream ke file sementara sebelum enqueue.</div>
+            </article>
+
+            <div class="right-stack">
+              <article class="panel job-focus-panel">
+                <div class="panel-heading compact-heading"><div><div class="section-kicker">LIVE JOB STATUS</div><h2>Processing timeline</h2></div><button class="text-button" id="open-jobs">All jobs <span>↗</span></button></div>
+                <div class="empty-job" id="empty-job"><div class="empty-orbit"><span>◌</span></div><b>Belum ada job aktif</b><p>Upload gambar untuk memulai simulasi RPC.</p></div>
+                <div class="focus-job" id="focus-job" hidden>
+                  <div class="focus-job-head"><div><span class="job-id-label">JOB ID</span><strong id="focus-job-id">JOB-XXXXXXXX</strong></div><span class="status-badge queued" id="focus-status"><i></i> QUEUED</span></div>
+                  <div class="focus-file-line"><span class="file-chip-icon">▧</span><span id="focus-filename">sample.jpg</span><span class="focus-filter" id="focus-filter">Grayscale</span></div>
+                  <div class="focus-progress-row"><span id="focus-message">Gambar masuk antrean</span><b id="focus-percent">10%</b></div>
+                  <div class="progress-track large-track"><span id="focus-bar"></span></div>
+                  <div class="timeline-steps">
+                    <div class="timeline-step done" data-step="queued"><span class="step-dot">✓</span><b>Queued</b><small>accepted</small></div>
+                    <div class="timeline-connector"></div>
+                    <div class="timeline-step" data-step="processing"><span class="step-dot">2</span><b>Processing</b><small>worker active</small></div>
+                    <div class="timeline-connector"></div>
+                    <div class="timeline-step" data-step="completed"><span class="step-dot">3</span><b>Completed</b><small>ready to fetch</small></div>
+                  </div>
+                  <div class="focus-actions"><button class="button button-secondary button-small" id="check-status-button">↻ CekStatus</button><button class="button button-secondary button-small" id="monitor-button">◉ Pantau stream</button><button class="button button-primary button-small" id="download-button" disabled>↓ Download</button><button class="button button-danger button-small" id="cancel-button">Cancel</button></div>
+                </div>
+              </article>
+
+              <article class="panel worker-panel">
+                <div class="panel-heading compact-heading"><div><div class="section-kicker">BACKGROUND PROCESSING</div><h2>Worker pool</h2></div><label class="worker-select-label">THREADS<select id="worker-count"><option value="2">02</option><option value="3">03</option><option value="4" selected>04</option><option value="6">06</option><option value="8">08</option></select></label></div>
+                <div class="worker-grid" id="worker-grid"></div>
+                <div class="queue-strip"><div class="queue-label"><span class="queue-icon">≋</span><div><b>FIFO task queue</b><small><span id="queue-length">0</span> jobs waiting</small></div></div><div class="queue-dots" id="queue-dots"><span class="queue-empty">No pending jobs</span></div></div>
+              </article>
+            </div>
+          </div>
+
+          <div class="lower-grid">
+            <article class="panel jobs-preview-panel"><div class="panel-heading compact-heading"><div><div class="section-kicker">SERVER REGISTRY</div><h2>Recent jobs</h2></div><button class="text-button" data-view-link="jobs">View all <span>↗</span></button></div><div class="recent-list" id="recent-list"><div class="empty-inline">Job yang dikirim akan tampil di sini.</div></div></article>
+            <article class="panel rpc-panel"><div class="panel-heading compact-heading"><div><div class="section-kicker">CLIENT INTERCEPTOR · AOP</div><h2>RPC telemetry</h2></div><span class="live-label"><i></i> LIVE</span></div><div class="telemetry-stats"><div><span>RPC calls</span><b id="rpc-total">0</b></div><div><span>Success</span><b id="rpc-success">0</b></div><div><span>Avg latency</span><b id="rpc-latency">—</b></div></div><div class="rpc-table-wrap"><table class="rpc-table"><thead><tr><th>METHOD</th><th>TYPE</th><th>RESULT</th><th>LATENCY</th></tr></thead><tbody id="rpc-log-body"><tr><td colspan="4" class="empty-table">Belum ada pemanggilan RPC.</td></tr></tbody></table></div></article>
+          </div>
+          <div class="activity-bar"><div class="activity-title"><span class="activity-pulse"></span><b>ACTIVITY STREAM</b><small>simulated server events</small></div><div class="activity-feed" id="activity-feed"><span class="activity-empty">Menunggu event pertama...</span></div></div>
+        </section>
+
+        <section class="view" id="view-jobs" aria-labelledby="jobs-title">
+          <div class="page-heading heading-row"><div><div class="eyebrow"><span class="eyebrow-line"></span> SERVER REGISTRY · LISTJOBS</div><h1 id="jobs-title">Job <span>queue.</span></h1><p class="page-subtitle">Daftar pekerjaan, filter status, pantau progres, batalkan, atau unduh hasil.</p></div><button class="button button-secondary" id="refresh-jobs">↻ Refresh ListJobs</button></div>
+          <div class="jobs-page-stats"><div><span>ALL JOBS</span><b id="jobs-all-count">0</b></div><div><span>ACTIVE</span><b id="jobs-active-count">0</b></div><div><span>FAILED</span><b id="jobs-failed-count">0</b></div><div><span>DEDUP HITS</span><b id="dedup-count">0</b></div></div>
+          <div class="panel jobs-table-panel"><div class="table-toolbar"><div class="filter-controls"><label class="search-box"><span>⌕</span><input id="job-search" type="search" placeholder="Cari job ID atau filename"></label><select id="job-status-filter" class="dark-select"><option value="all">All statuses</option><option value="QUEUED">Queued</option><option value="PROCESSING">Processing</option><option value="COMPLETED">Completed</option><option value="FAILED">Failed</option><option value="CANCELLED">Cancelled</option></select><label class="checkbox-filter"><input id="active-only" type="checkbox"><span>Active only</span></label></div><span class="table-rpc-tag">UNARY · ListJobs</span></div><div class="table-scroll"><table class="jobs-table"><thead><tr><th>JOB</th><th>STATUS</th><th>FILTER</th><th>PROGRESS</th><th>SIZE</th><th>CREATED</th><th>ACTIONS</th></tr></thead><tbody id="jobs-table-body"><tr><td colspan="7" class="empty-table">Belum ada pekerjaan. Kembali ke Overview untuk upload.</td></tr></tbody></table></div><div class="table-footer"><span id="jobs-table-summary">Menampilkan 0 jobs</span><span>Request ID cache · process memory</span></div></div>
+          <div class="job-detail-grid"><article class="panel detail-panel"><div class="panel-heading compact-heading"><div><div class="section-kicker">SELECTED RECORD</div><h2>Job detail</h2></div><span class="rpc-tag">CekStatus · unary</span></div><div id="job-detail-content" class="detail-empty">Pilih satu job dari tabel untuk melihat detailnya.</div></article><article class="panel result-panel"><div class="panel-heading compact-heading"><div><div class="section-kicker">IMAGE OUTPUT</div><h2>Before / after</h2></div><span class="result-type" id="result-type">No output</span></div><div class="image-compare" id="image-compare"><div class="compare-empty"><span>▧</span><b>Hasil muncul setelah job selesai</b><small>Output dikirim lewat stream UnduhGambar.</small></div></div></article></div>
+        </section>
+
+        <section class="view" id="view-benchmark" aria-labelledby="benchmark-title">
+          <div class="page-heading heading-row"><div><div class="eyebrow"><span class="eyebrow-line"></span> PERFORMANCE LAB · 1 / 5 / 20</div><h1 id="benchmark-title">Load <span>profile.</span></h1><p class="page-subtitle">Simulasikan model beban yang setara dengan benchmark proyek: 20 job pada 1, 5, dan 20 client bersamaan.</p></div><button class="button button-primary" id="run-benchmark"><span>▶</span> Run simulation</button></div>
+          <div class="notice-banner"><span class="notice-icon">i</span><div><b>Ini model simulasi, bukan hasil benchmark server aktual.</b><span>Benchmark asli ada di <code>benchmark/benchmark.py</code>; angka di sini dihitung di browser agar alur pengukuran bisa dipelajari tanpa koneksi gRPC.</span></div><span class="notice-model">8 IMAGE WORKERS · 32 RPC THREADS</span></div>
+          <div class="benchmark-layout"><article class="panel benchmark-chart-panel"><div class="panel-heading"><div><div class="section-kicker">THROUGHPUT MODEL</div><h2>Jobs per second</h2><p>Estimasi throughput pipeline untuk 20 job.</p></div><span class="chart-legend"><i></i> jobs / sec</span></div><div class="bar-chart" id="throughput-chart"><div class="chart-empty">Jalankan simulasi benchmark untuk melihat grafik.</div></div><div class="chart-axis"><span>1 CLIENT</span><span>5 CLIENTS</span><span>20 CLIENTS</span></div></article><article class="panel latency-chart-panel"><div class="panel-heading"><div><div class="section-kicker">END-TO-END LATENCY</div><h2>Latency profile</h2><p>Rata-rata dan P95 dalam milidetik.</p></div></div><div class="latency-chart" id="latency-chart"><div class="chart-empty">Belum ada data model.</div></div><div class="chart-legend-row"><span><i class="legend-average"></i>Average</span><span><i class="legend-p95"></i>P95</span></div></article></div>
+          <article class="panel benchmark-results-panel"><div class="panel-heading compact-heading"><div><div class="section-kicker">SCENARIO RESULTS</div><h2>Concurrent client comparison</h2></div><span class="result-type">20 jobs / scenario</span></div><div class="table-scroll"><table class="jobs-table benchmark-table"><thead><tr><th>CLIENTS</th><th>JOBS</th><th>TOTAL TIME</th><th>AVG LATENCY</th><th>MIN LATENCY</th><th>P95 LATENCY</th><th>MAX LATENCY</th><th>THROUGHPUT</th><th>ERRORS</th></tr></thead><tbody id="benchmark-table-body"><tr><td colspan="9" class="empty-table">Belum ada simulasi. Klik Run simulation.</td></tr></tbody></table></div></article>
+          <div class="benchmark-note-grid"><div class="note-card"><span class="note-number">01</span><div><b>Latency</b><p>Waktu rata-rata satu pipeline dari upload hingga output selesai diunduh.</p></div></div><div class="note-card"><span class="note-number">02</span><div><b>Throughput</b><p>Jumlah job selesai dibagi waktu total skenario; RPC/s mengalikan pipeline dengan 4 panggilan inti.</p></div></div><div class="note-card"><span class="note-number">03</span><div><b>Concurrency</b><p>RPC thread menangani permintaan; worker pool membatasi pemrosesan gambar secara paralel.</p></div></div></div>
+        </section>
+
+        <section class="view" id="view-architecture" aria-labelledby="architecture-title">
+          <div class="page-heading"><div><div class="eyebrow"><span class="eyebrow-line"></span> SYSTEM MAP · GRPC + PROTOBUF</div><h1 id="architecture-title">How the pieces <span>connect.</span></h1><p class="page-subtitle">Kontrak RPC, batas proses, dan alur kerja dari client sampai hasil gambar.</p></div></div>
+          <div class="architecture-flow panel">
+            <div class="flow-node client-node"><div class="flow-node-icon">⌘</div><span class="node-role">CONTAINER 01</span><h3>gRPC Client</h3><p>CLI visual · batch upload<br>UUID retry · interceptor</p><span class="node-address">Client stub</span></div>
+            <div class="flow-link"><span>HTTP/2 · Protobuf</span><i></i><small>6 RPC methods</small></div>
+            <div class="flow-node server-node"><div class="flow-node-icon">⬡</div><span class="node-role">CONTAINER 02</span><h3>gRPC Servicer</h3><p>ThreadPoolExecutor<br>20 RPC threads</p><span class="node-address">grpc-image-server:50051</span></div>
+            <div class="flow-link internal-link"><span>enqueue</span><i></i><small>thread-safe</small></div>
+            <div class="flow-node queue-node"><div class="flow-node-icon">≋</div><span class="node-role">ASYNC LAYER</span><h3>Queue + Lock</h3><p>queue.Queue FIFO<br>threading.Lock state</p><span class="node-address">request_id map</span></div>
+            <div class="flow-link internal-link"><span>dequeue</span><i></i><small>worker pool</small></div>
+            <div class="flow-node worker-node"><div class="flow-node-icon">⠿</div><span class="node-role">IMAGE ENGINE</span><h3>Image Workers</h3><p>4 background threads<br>Pillow + NumPy</p><span class="node-address">input → output</span></div>
+          </div>
+          <div class="architecture-bottom-grid"><article class="panel rpc-contract-panel"><div class="panel-heading compact-heading"><div><div class="section-kicker">PROTO CONTRACT</div><h2>Six RPC methods</h2></div><span class="contract-badge">image_service.proto</span></div><div class="rpc-method-list">
+            <div class="rpc-method"><span class="rpc-method-number">01</span><div><b>UploadGambar</b><small>Client stream → UploadResponse · chunks 64 KB</small></div><span class="method-type client-stream">CLIENT STREAM</span></div>
+            <div class="rpc-method"><span class="rpc-method-number">02</span><div><b>CekStatus</b><small>StatusRequest → StatusResponse · Future optional</small></div><span class="method-type unary">UNARY</span></div>
+            <div class="rpc-method"><span class="rpc-method-number">03</span><div><b>PantauStatus</b><small>StatusRequest → stream StatusResponse</small></div><span class="method-type server-stream">SERVER STREAM</span></div>
+            <div class="rpc-method"><span class="rpc-method-number">04</span><div><b>UnduhGambar</b><small>DownloadRequest → stream DownloadChunk · 64 KB</small></div><span class="method-type server-stream">SERVER STREAM</span></div>
+            <div class="rpc-method"><span class="rpc-method-number">05</span><div><b>ListJobs</b><small>Filter by status / active jobs → JobSummary list</small></div><span class="method-type unary">UNARY</span></div>
+            <div class="rpc-method"><span class="rpc-method-number">06</span><div><b>BatalkanJob</b><small>CancelRequest → CancelResponse</small></div><span class="method-type unary">UNARY</span></div>
+          </div></article><article class="panel safeguards-panel"><div class="panel-heading compact-heading"><div><div class="section-kicker">RELIABILITY & SAFETY</div><h2>What protects each job</h2></div></div><div class="safeguard-list"><div><span class="safeguard-icon mint">⌑</span><div><b>Chunked transfer</b><p>Upload diterima per 64 KB dan ditulis ke file sementara sebelum job dibuat.</p></div></div><div><span class="safeguard-icon blue">⟲</span><div><b>At-most-once retry</b><p>UUID tetap dipakai selama retry; request duplikat mengembalikan job yang sama.</p></div></div><div><span class="safeguard-icon violet">⛨</span><div><b>Thread-safe registry</b><p>Lock melindungi status dan dedupe map; Queue membagi tugas ke worker.</p></div></div><div><span class="safeguard-icon amber">◷</span><div><b>Timeout + backoff</b><p>DEADLINE_EXCEEDED / UNAVAILABLE memicu jeda eksponensial 0.5s dan 1s, dengan maksimum 3 attempt.</p></div></div><div><span class="safeguard-icon blue">↯</span><div><b>Graceful shutdown</b><p>Server berhenti menerima RPC sebelum worker menerima sinyal shutdown.</p></div></div></div><div class="docker-topology"><div class="docker-topology-head"><span class="docker-cube">⬡</span><div><b>Docker Compose topology</b><small>2 containers · bridge network</small></div><span class="topology-live"><i></i> DEFINED</span></div><div class="docker-pair"><span>grpc-image-client</span><i>⇄</i><span>grpc-image-server:50051</span></div><div class="docker-network">kpt-rpc-net <span>·</span> port 50051 → 50051</div></div></article></div>
+          <div class="filter-reference"><div class="filter-reference-heading"><div><div class="section-kicker">PROCESSINGTYPE ENUM</div><h2>Six image filters</h2></div><p>Filter dikirim sebagai metadata job dan dipilih worker server.</p></div><div class="filter-reference-grid"><div><span class="filter-ref-icon swatch-gray">◐</span><b>Grayscale</b><small>RGB → L</small></div><div><span class="filter-ref-icon swatch-blue">◌</span><b>Gaussian Blur</b><small>radius 3</small></div><div><span class="filter-ref-icon swatch-sepia">◒</span><b>Sepia</b><small>matrix transform</small></div><div><span class="filter-ref-icon swatch-pink">◑</span><b>Invert</b><small>negative color</small></div><div><span class="filter-ref-icon swatch-violet">⌁</span><b>Edge Detect</b><small>find edges</small></div><div><span class="filter-ref-icon swatch-green">✳</span><b>Sharpen</b><small>detail boost</small></div></div></div>
+          <div class="sim-disclaimer"><span>ⓘ</span><p><b>Simulation scope:</b> dashboard ini memodelkan komunikasi, queue, status, dan transformasi gambar di browser. Sistem gRPC Python tetap dijalankan terpisah; halaman ini belum mengirim RPC ke server asli.</p></div>
+        </section>
+
+        <footer class="page-footer"><span>KPT·RPC <i>—</i> Parallel & Distributed Computing</span><span>Study case 05 <i>·</i> Image processing queue</span></footer>
+      </div>
+    </main>
+  </div>
+
+  <div class="toast-stack" id="toast-stack" aria-live="polite"></div>
+  <dialog class="help-dialog" id="help-dialog"><div class="dialog-head"><div><div class="section-kicker">ABOUT THIS PAGE</div><h2>RPC image queue simulator</h2></div><button class="icon-button" id="close-help" aria-label="Close">×</button></div><p>Web ini memperagakan alur proyek KPT-RPC di browser: upload chunk, UUID deduplication, job queue, worker pool, enam RPC, filter gambar, dan benchmark model.</p><div class="dialog-callout"><b>Local simulation</b><span>Data job hanya hidup di halaman ini dan tidak dikirim ke server gRPC Python. Untuk pengukuran nyata, jalankan <code>python -m benchmark.benchmark</code>.</span></div><button class="button button-primary dialog-close-button" id="close-help-bottom">Got it</button></dialog>
+</body>
+</html>

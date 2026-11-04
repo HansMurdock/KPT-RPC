@@ -60,6 +60,10 @@ KPT-RPC/
 ├── benchmark/
 │   ├── benchmark.py              # Skrip pengujian beban (1, 5, 20 client) & plot
 │   └── results/                  # Grafik PNG & tabel CSV metrik evaluasi
+├── web/
+│   ├── index.html                # Dashboard simulator RPC bertema gelap
+│   ├── styles.css                # Layout responsif dan komponen visual
+│   └── app.js                    # Upload, antrean, worker, job, dan benchmark simulasi
 ├── docker/
 │   ├── Dockerfile.server         # Konfigurasi container untuk server gRPC
 │   ├── Dockerfile.client         # Konfigurasi container untuk client gRPC
@@ -144,12 +148,26 @@ python -m client.client --action cancel --job-id <JOB_ID>
 
 ---
 
+## 🖥️ Web Simulator (Dashboard Gelap)
+
+Web simulator memperagakan alur sistem di browser: upload gambar per chunk 64 KB, enam filter citra, UUID retry/deduplikasi, queue dan worker pool, enam metode RPC, status/monitoring, pembatalan, unduhan hasil, telemetry interceptor, topologi Docker, dan model benchmark 1/5/20 client.
+
+Jalankan dari root repositori:
+
+```bash
+python -m http.server 8080 --directory web
+```
+
+Buka `http://localhost:8080`. Dashboard ini berjalan lokal di browser dan **mensimulasikan** RPC; dashboard tidak terhubung ke server gRPC Python. Untuk benchmark server sebenarnya, gunakan `python -m benchmark.benchmark`.
+
+---
+
 ## 🐳 Menjalankan di 2 Container Berbeda (Docker Compose)
 
 Untuk memenuhi ketentuan demo minimal 2 mesin/container terpisah:
 ```bash
 cd docker
-docker-compose up --build
+docker compose up --build
 ```
 Container `kpt-rpc-server` dan `kpt-rpc-client` akan otomatis berjalan di jaringan bridge terisolasi `kpt-rpc-net`, di mana client berkomunikasi ke server melalui hostname `grpc-image-server:50051`.
 
