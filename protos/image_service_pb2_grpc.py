@@ -26,7 +26,8 @@ if _version_not_supported:
 
 
 class ImageServiceStub:
-    """Definisi Layanan Pengolahan Gambar Berbasis gRPC
+    """--- Definisi Service ---
+
     """
 
     def __init__(self, channel):
@@ -55,35 +56,60 @@ class ImageServiceStub:
                 request_serializer=protos_dot_image__service__pb2.DownloadRequest.SerializeToString,
                 response_deserializer=protos_dot_image__service__pb2.DownloadChunk.FromString,
                 _registered_method=True)
+        self.ListJobs = channel.unary_unary(
+                '/imageprocessing.ImageService/ListJobs',
+                request_serializer=protos_dot_image__service__pb2.ListJobsRequest.SerializeToString,
+                response_deserializer=protos_dot_image__service__pb2.ListJobsResponse.FromString,
+                _registered_method=True)
+        self.BatalkanJob = channel.unary_unary(
+                '/imageprocessing.ImageService/BatalkanJob',
+                request_serializer=protos_dot_image__service__pb2.CancelRequest.SerializeToString,
+                response_deserializer=protos_dot_image__service__pb2.CancelResponse.FromString,
+                _registered_method=True)
 
 
 class ImageServiceServicer:
-    """Definisi Layanan Pengolahan Gambar Berbasis gRPC
+    """--- Definisi Service ---
+
     """
 
     def UploadGambar(self, request_iterator, context):
-        """1. Client Streaming: Client mengunggah gambar per chunk (64KB) ke server
+        """1. Client Streaming: upload gambar per chunk (64KB)
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
     def CekStatus(self, request, context):
-        """2. Unary: Client mengecek status pekerjaan berdasarkan job_id
+        """2. Unary: cek status pekerjaan berdasarkan job_id
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
     def PantauStatus(self, request, context):
-        """3. Server Streaming: Server mengirimkan update status secara langsung (real-time stream)
+        """3. Server Streaming: pantau progres real-time
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
     def UnduhGambar(self, request, context):
-        """4. Server Streaming: Client mengunduh gambar hasil grayscale per chunk
+        """4. Server Streaming: unduh gambar hasil pemrosesan per chunk
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ListJobs(self, request, context):
+        """5. Unary: daftar semua pekerjaan di server (dengan filter opsional)
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def BatalkanJob(self, request, context):
+        """6. Unary: batalkan pekerjaan yang sedang dalam antrean
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -112,6 +138,16 @@ def add_ImageServiceServicer_to_server(servicer, server):
                     request_deserializer=protos_dot_image__service__pb2.DownloadRequest.FromString,
                     response_serializer=protos_dot_image__service__pb2.DownloadChunk.SerializeToString,
             ),
+            'ListJobs': grpc.unary_unary_rpc_method_handler(
+                    servicer.ListJobs,
+                    request_deserializer=protos_dot_image__service__pb2.ListJobsRequest.FromString,
+                    response_serializer=protos_dot_image__service__pb2.ListJobsResponse.SerializeToString,
+            ),
+            'BatalkanJob': grpc.unary_unary_rpc_method_handler(
+                    servicer.BatalkanJob,
+                    request_deserializer=protos_dot_image__service__pb2.CancelRequest.FromString,
+                    response_serializer=protos_dot_image__service__pb2.CancelResponse.SerializeToString,
+            ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
             'imageprocessing.ImageService', rpc_method_handlers)
@@ -121,7 +157,8 @@ def add_ImageServiceServicer_to_server(servicer, server):
 
  # This class is part of an EXPERIMENTAL API.
 class ImageService:
-    """Definisi Layanan Pengolahan Gambar Berbasis gRPC
+    """--- Definisi Service ---
+
     """
 
     @staticmethod
@@ -222,6 +259,60 @@ class ImageService:
             '/imageprocessing.ImageService/UnduhGambar',
             protos_dot_image__service__pb2.DownloadRequest.SerializeToString,
             protos_dot_image__service__pb2.DownloadChunk.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def ListJobs(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/imageprocessing.ImageService/ListJobs',
+            protos_dot_image__service__pb2.ListJobsRequest.SerializeToString,
+            protos_dot_image__service__pb2.ListJobsResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def BatalkanJob(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/imageprocessing.ImageService/BatalkanJob',
+            protos_dot_image__service__pb2.CancelRequest.SerializeToString,
+            protos_dot_image__service__pb2.CancelResponse.FromString,
             options,
             channel_credentials,
             insecure,

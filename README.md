@@ -11,7 +11,7 @@ Proyek Mini Mata Kuliah **Komputasi Paralel dan Terdistribusi (KPT)**.
 | No | Nama | Peran | Tanggung Jawab Utama |
 | :---: | :--- | :--- | :--- |
 | 1 | **Zaki** | Backend & Processing Engineer | • Implementasi `server/server.py` dan `server/worker.py`<br>• Manajemen antrean thread-safe (`queue.Queue`) & worker pool<br>• Konversi citra ke Grayscale (`Pillow` mode `'L'`)<br>• Penanganan *concurrency* & locking status (`threading.Lock()`) |
-| 2 | **Rafa** | Interface & Client Engineer | • Desain kontrak antarmuka `protos/image_service.proto` (4 RPCs)<br>• Implementasi `client/client.py`<br>• Pengunggahan & pengunduhan citra per chunk 64 KB (Streaming RPC)<br>• Toleransi kegagalan: Timeout, Retry (Exponential Backoff), & Deduplikasi UUID |
+| 2 | **Rafa** | Interface & Client Engineer | • Desain kontrak antarmuka `protos/image_service.proto` (6 RPCs & multi-filter `ProcessingType`)<br>• Implementasi `client/client.py` & Client Interceptor `client/interceptor.py` (AOP Pattern)<br>• CLI Interaktif & visual (`Rich` terminal UI, batch upload, live progress bar streaming)<br>• Pengunggahan & pengunduhan citra per chunk 64 KB (Streaming RPC)<br>• Toleransi kegagalan: Timeout, Retry (Exponential Backoff), & Deduplikasi UUID |
 | 3 | **Khansa Rasendriya Aji (Hans)** *(Lead)* | Benchmark, DevOps & Reporting Lead | • Setup repositori Git & arsitektur proyek<br>• Kontainerisasi multi-mesin (`docker/docker-compose.yml`)<br>• Pengujian beban kinerja (`benchmark/benchmark.py` untuk 1, 5, 20 client)<br>• Visualisasi grafik latensi & throughput (`matplotlib`)<br>• Koordinasi Laporan Akhir & Video Demo |
 
 ---
@@ -43,7 +43,7 @@ Berikut perbandingan visual citra uji berwarna (RGB) yang diunggah oleh client d
 ```text
 KPT-RPC/
 ├── protos/
-│   ├── image_service.proto       # Kontrak IDL Protocol Buffers (4 RPCs)
+│   ├── image_service.proto       # Kontrak IDL Protocol Buffers (6 RPCs & ProcessingType)
 │   ├── image_service_pb2.py      # Stub kelas pesan Protobuf
 │   └── image_service_pb2_grpc.py # Stub client & servicer gRPC
 ├── server/
@@ -53,7 +53,8 @@ KPT-RPC/
 │       ├── input/                # Citra asli hasil upload
 │       └── output/               # Citra hasil konversi grayscale
 ├── client/
-│   ├── client.py                 # Client CLI (Upload, Status, Monitor, Download)
+│   ├── client.py                 # Client CLI Interaktif (Rich TUI, Upload, Status, Monitor, Download, Batch)
+│   ├── interceptor.py            # gRPC Client Interceptor (AOP: Logging & Latency Tracker)
 │   ├── samples/                  # Berkas citra sampel RGB untuk pengujian
 │   └── downloads/               # Direktori hasil unduhan citra grayscale
 ├── benchmark/
@@ -115,21 +116,30 @@ python -m server.server
 
 ### Jalankan Client
 ```bash
-# 1. Menjalankan pipeline lengkap (Upload -> Monitor -> Download)
-python -m client.client --action full-pipeline --file client/samples/sample.jpg
+# 1. Mode Interaktif (TUI Visual & Menu Interaktif):
+python -m client.client
 
-# 2. Atau jalankan per langkah:
-# Unggah gambar:
-python -m client.client --action upload --file client/samples/sample.jpg
+# 2. Menjalankan pipeline langsung (dengan filter: grayscale, blur, sepia, invert, edge, sharpen):
+python -m client.client --action full-pipeline --file client/samples/sample.jpg --filter sepia
+
+# 3. Atau jalankan perintah spesifik:
+# Unggah gambar dengan filter tertentu:
+python -m client.client --action upload --file client/samples/sample.jpg --filter blur
 
 # Cek status pekerjaan:
 python -m client.client --action status --job-id <JOB_ID>
 
-# Pantau status secara real-time:
+# Pantau status secara real-time (Server Streaming):
 python -m client.client --action monitor --job-id <JOB_ID>
 
-# Unduh gambar hasil grayscale:
+# Unduh gambar hasil pemrosesan:
 python -m client.client --action download --job-id <JOB_ID> --output client/downloads/hasil.jpg
+
+# Lihat daftar seluruh pekerjaan di server:
+python -m client.client --action list-jobs
+
+# Batalkan pekerjaan di antrean:
+python -m client.client --action cancel --job-id <JOB_ID>
 ```
 
 ---

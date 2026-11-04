@@ -24,29 +24,41 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1aprotos/image_service.proto\x12\x0fimageprocessing\"]\n\rImageMetadata\x12\x12\n\nrequest_id\x18\x01 \x01(\t\x12\x10\n\x08\x66ilename\x18\x02 \x01(\t\x12\x13\n\x0b\x66ile_format\x18\x03 \x01(\t\x12\x11\n\tfile_size\x18\x04 \x01(\x03\"b\n\x0bUploadChunk\x12\x32\n\x08metadata\x18\x01 \x01(\x0b\x32\x1e.imageprocessing.ImageMetadataH\x00\x12\x14\n\nchunk_data\x18\x02 \x01(\x0cH\x00\x42\t\n\x07payload\"n\n\x0eUploadResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0e\n\x06job_id\x18\x02 \x01(\t\x12\x0f\n\x07message\x18\x03 \x01(\t\x12*\n\x06status\x18\x04 \x01(\x0e\x32\x1a.imageprocessing.JobStatus\"\x1f\n\rStatusRequest\x12\x0e\n\x06job_id\x18\x01 \x01(\t\"\x9c\x01\n\x0eStatusResponse\x12\x0e\n\x06job_id\x18\x01 \x01(\t\x12*\n\x06status\x18\x02 \x01(\x0e\x32\x1a.imageprocessing.JobStatus\x12\x18\n\x10progress_percent\x18\x03 \x01(\x05\x12\x0f\n\x07message\x18\x04 \x01(\t\x12\x10\n\x08\x66ilename\x18\x05 \x01(\t\x12\x11\n\ttimestamp\x18\x06 \x01(\x03\"!\n\x0f\x44ownloadRequest\x12\x0e\n\x06job_id\x18\x01 \x01(\t\"a\n\rDownloadChunk\x12\x10\n\x08\x66ilename\x18\x01 \x01(\t\x12\x12\n\nchunk_data\x18\x02 \x01(\x0c\x12\x15\n\ris_last_chunk\x18\x03 \x01(\x08\x12\x13\n\x0btotal_bytes\x18\x04 \x01(\x03*\x88\x01\n\tJobStatus\x12\x12\n\x0eSTATUS_UNKNOWN\x10\x00\x12\x11\n\rSTATUS_QUEUED\x10\x01\x12\x15\n\x11STATUS_PROCESSING\x10\x02\x12\x14\n\x10STATUS_COMPLETED\x10\x03\x12\x11\n\rSTATUS_FAILED\x10\x04\x12\x14\n\x10STATUS_CANCELLED\x10\x05\x32\xd3\x02\n\x0cImageService\x12O\n\x0cUploadGambar\x12\x1c.imageprocessing.UploadChunk\x1a\x1f.imageprocessing.UploadResponse(\x01\x12L\n\tCekStatus\x12\x1e.imageprocessing.StatusRequest\x1a\x1f.imageprocessing.StatusResponse\x12Q\n\x0cPantauStatus\x12\x1e.imageprocessing.StatusRequest\x1a\x1f.imageprocessing.StatusResponse0\x01\x12Q\n\x0bUnduhGambar\x12 .imageprocessing.DownloadRequest\x1a\x1e.imageprocessing.DownloadChunk0\x01\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1aprotos/image_service.proto\x12\x0fimageprocessing\"\x97\x01\n\rImageMetadata\x12\x12\n\nrequest_id\x18\x01 \x01(\t\x12\x10\n\x08\x66ilename\x18\x02 \x01(\t\x12\x13\n\x0b\x66ile_format\x18\x03 \x01(\t\x12\x11\n\tfile_size\x18\x04 \x01(\x03\x12\x38\n\x0fprocessing_type\x18\x05 \x01(\x0e\x32\x1f.imageprocessing.ProcessingType\"b\n\x0bUploadChunk\x12\x32\n\x08metadata\x18\x01 \x01(\x0b\x32\x1e.imageprocessing.ImageMetadataH\x00\x12\x14\n\nchunk_data\x18\x02 \x01(\x0cH\x00\x42\t\n\x07payload\"n\n\x0eUploadResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0e\n\x06job_id\x18\x02 \x01(\t\x12\x0f\n\x07message\x18\x03 \x01(\t\x12*\n\x06status\x18\x04 \x01(\x0e\x32\x1a.imageprocessing.JobStatus\"\x1f\n\rStatusRequest\x12\x0e\n\x06job_id\x18\x01 \x01(\t\"\xd6\x01\n\x0eStatusResponse\x12\x0e\n\x06job_id\x18\x01 \x01(\t\x12*\n\x06status\x18\x02 \x01(\x0e\x32\x1a.imageprocessing.JobStatus\x12\x18\n\x10progress_percent\x18\x03 \x01(\x05\x12\x0f\n\x07message\x18\x04 \x01(\t\x12\x10\n\x08\x66ilename\x18\x05 \x01(\t\x12\x11\n\ttimestamp\x18\x06 \x01(\x03\x12\x38\n\x0fprocessing_type\x18\x07 \x01(\x0e\x32\x1f.imageprocessing.ProcessingType\"!\n\x0f\x44ownloadRequest\x12\x0e\n\x06job_id\x18\x01 \x01(\t\"a\n\rDownloadChunk\x12\x10\n\x08\x66ilename\x18\x01 \x01(\t\x12\x12\n\nchunk_data\x18\x02 \x01(\x0c\x12\x15\n\ris_last_chunk\x18\x03 \x01(\x08\x12\x13\n\x0btotal_bytes\x18\x04 \x01(\x03\"`\n\x0fListJobsRequest\x12\x31\n\rfilter_status\x18\x01 \x01(\x0e\x32\x1a.imageprocessing.JobStatus\x12\x1a\n\x12\x66ilter_active_only\x18\x02 \x01(\x08\"\x92\x02\n\nJobSummary\x12\x0e\n\x06job_id\x18\x01 \x01(\t\x12\x10\n\x08\x66ilename\x18\x02 \x01(\t\x12*\n\x06status\x18\x03 \x01(\x0e\x32\x1a.imageprocessing.JobStatus\x12\x18\n\x10progress_percent\x18\x04 \x01(\x05\x12\x38\n\x0fprocessing_type\x18\x05 \x01(\x0e\x32\x1f.imageprocessing.ProcessingType\x12\x12\n\ncreated_at\x18\x06 \x01(\x03\x12\x14\n\x0c\x63ompleted_at\x18\x07 \x01(\x03\x12\x12\n\ninput_size\x18\x08 \x01(\x05\x12\x13\n\x0boutput_size\x18\t \x01(\x05\x12\x0f\n\x07message\x18\n \x01(\t\"R\n\x10ListJobsResponse\x12)\n\x04jobs\x18\x01 \x03(\x0b\x32\x1b.imageprocessing.JobSummary\x12\x13\n\x0btotal_count\x18\x02 \x01(\x05\"\x1f\n\rCancelRequest\x12\x0e\n\x06job_id\x18\x01 \x01(\t\"2\n\x0e\x43\x61ncelResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t*\x88\x01\n\tJobStatus\x12\x12\n\x0eSTATUS_UNKNOWN\x10\x00\x12\x11\n\rSTATUS_QUEUED\x10\x01\x12\x15\n\x11STATUS_PROCESSING\x10\x02\x12\x14\n\x10STATUS_COMPLETED\x10\x03\x12\x11\n\rSTATUS_FAILED\x10\x04\x12\x14\n\x10STATUS_CANCELLED\x10\x05*|\n\x0eProcessingType\x12\x12\n\x0ePROC_GRAYSCALE\x10\x00\x12\r\n\tPROC_BLUR\x10\x01\x12\x0e\n\nPROC_SEPIA\x10\x02\x12\x0f\n\x0bPROC_INVERT\x10\x03\x12\x14\n\x10PROC_EDGE_DETECT\x10\x04\x12\x10\n\x0cPROC_SHARPEN\x10\x05\x32\xf4\x03\n\x0cImageService\x12O\n\x0cUploadGambar\x12\x1c.imageprocessing.UploadChunk\x1a\x1f.imageprocessing.UploadResponse(\x01\x12L\n\tCekStatus\x12\x1e.imageprocessing.StatusRequest\x1a\x1f.imageprocessing.StatusResponse\x12Q\n\x0cPantauStatus\x12\x1e.imageprocessing.StatusRequest\x1a\x1f.imageprocessing.StatusResponse0\x01\x12Q\n\x0bUnduhGambar\x12 .imageprocessing.DownloadRequest\x1a\x1e.imageprocessing.DownloadChunk0\x01\x12O\n\x08ListJobs\x12 .imageprocessing.ListJobsRequest\x1a!.imageprocessing.ListJobsResponse\x12N\n\x0b\x42\x61talkanJob\x12\x1e.imageprocessing.CancelRequest\x1a\x1f.imageprocessing.CancelResponseb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'protos.image_service_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
-  _globals['_JOBSTATUS']._serialized_start=681
-  _globals['_JOBSTATUS']._serialized_end=817
-  _globals['_IMAGEMETADATA']._serialized_start=47
-  _globals['_IMAGEMETADATA']._serialized_end=140
-  _globals['_UPLOADCHUNK']._serialized_start=142
-  _globals['_UPLOADCHUNK']._serialized_end=240
-  _globals['_UPLOADRESPONSE']._serialized_start=242
-  _globals['_UPLOADRESPONSE']._serialized_end=352
-  _globals['_STATUSREQUEST']._serialized_start=354
-  _globals['_STATUSREQUEST']._serialized_end=385
-  _globals['_STATUSRESPONSE']._serialized_start=388
-  _globals['_STATUSRESPONSE']._serialized_end=544
-  _globals['_DOWNLOADREQUEST']._serialized_start=546
-  _globals['_DOWNLOADREQUEST']._serialized_end=579
-  _globals['_DOWNLOADCHUNK']._serialized_start=581
-  _globals['_DOWNLOADCHUNK']._serialized_end=678
-  _globals['_IMAGESERVICE']._serialized_start=820
-  _globals['_IMAGESERVICE']._serialized_end=1159
+  _globals['_JOBSTATUS']._serialized_start=1342
+  _globals['_JOBSTATUS']._serialized_end=1478
+  _globals['_PROCESSINGTYPE']._serialized_start=1480
+  _globals['_PROCESSINGTYPE']._serialized_end=1604
+  _globals['_IMAGEMETADATA']._serialized_start=48
+  _globals['_IMAGEMETADATA']._serialized_end=199
+  _globals['_UPLOADCHUNK']._serialized_start=201
+  _globals['_UPLOADCHUNK']._serialized_end=299
+  _globals['_UPLOADRESPONSE']._serialized_start=301
+  _globals['_UPLOADRESPONSE']._serialized_end=411
+  _globals['_STATUSREQUEST']._serialized_start=413
+  _globals['_STATUSREQUEST']._serialized_end=444
+  _globals['_STATUSRESPONSE']._serialized_start=447
+  _globals['_STATUSRESPONSE']._serialized_end=661
+  _globals['_DOWNLOADREQUEST']._serialized_start=663
+  _globals['_DOWNLOADREQUEST']._serialized_end=696
+  _globals['_DOWNLOADCHUNK']._serialized_start=698
+  _globals['_DOWNLOADCHUNK']._serialized_end=795
+  _globals['_LISTJOBSREQUEST']._serialized_start=797
+  _globals['_LISTJOBSREQUEST']._serialized_end=893
+  _globals['_JOBSUMMARY']._serialized_start=896
+  _globals['_JOBSUMMARY']._serialized_end=1170
+  _globals['_LISTJOBSRESPONSE']._serialized_start=1172
+  _globals['_LISTJOBSRESPONSE']._serialized_end=1254
+  _globals['_CANCELREQUEST']._serialized_start=1256
+  _globals['_CANCELREQUEST']._serialized_end=1287
+  _globals['_CANCELRESPONSE']._serialized_start=1289
+  _globals['_CANCELRESPONSE']._serialized_end=1339
+  _globals['_IMAGESERVICE']._serialized_start=1607
+  _globals['_IMAGESERVICE']._serialized_end=2107
 # @@protoc_insertion_point(module_scope)

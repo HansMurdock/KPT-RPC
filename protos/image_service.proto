@@ -2,79 +2,144 @@ syntax = "proto3";
 
 package imageprocessing;
 
-// Enum status pekerjaan pengolahan citra
+// ============================================================
+// KONTRAK gRPC: SISTEM ANTRIAN PENGOLAHAN CITRA TERDISTRIBUSI
+// Disusun oleh Anggota 2 (Rafa) — Contract .proto & Client App
+// ============================================================
+
+// --- Enum ---
+
+// Status siklus hidup pekerjaan pengolahan citra
 enum JobStatus {
-  STATUS_UNKNOWN = 0;
-  STATUS_QUEUED = 1;
+  STATUS_UNKNOWN    = 0;
+  STATUS_QUEUED     = 1;
   STATUS_PROCESSING = 2;
-  STATUS_COMPLETED = 3;
-  STATUS_FAILED = 4;
-  STATUS_CANCELLED = 5;
+  STATUS_COMPLETED  = 3;
+  STATUS_FAILED     = 4;
+  STATUS_CANCELLED  = 5;
 }
+
+// Jenis pemrosesan citra yang tersedia
+enum ProcessingType {
+  PROC_GRAYSCALE    = 0;  // Konversi RGB -> Grayscale (default)
+  PROC_BLUR         = 1;  // Gaussian Blur (radius=3)
+  PROC_SEPIA        = 2;  // Filter Sepia vintage
+  PROC_INVERT       = 3;  // Inversi warna (negatif)
+  PROC_EDGE_DETECT  = 4;  // Deteksi tepi (Canny/Contour)
+  PROC_SHARPEN      = 5;  // Penajaman citra
+}
+
+// --- Messages untuk Upload (Client Streaming) ---
 
 // Metadata informasi file gambar yang diunggah
 message ImageMetadata {
-  string request_id = 1;  // ID unik untuk idempotensi / deduplikasi (UUIDv4)
-  string filename = 2;    // Nama asli file (e.g. foto.jpg)
-  string file_format = 3; // Format citra (e.g. JPEG, PNG)
-  int64 file_size = 4;    // Total ukuran file dalam bytes
+  string request_id      = 1;  // ID unik idempotensi/deduplikasi (UUIDv4)
+  string filename        = 2;  // Nama asli file (e.g. foto.jpg)
+  string file_format     = 3;  // Format citra (e.g. JPEG, PNG)
+  int64 file_size        = 4;  // Total ukuran file dalam bytes
+  ProcessingType processing_type = 5;  // Jenis pemrosesan yang diminta
 }
 
-// Request upload: pesan pertama mengirim metadata, pesan selanjutnya mengirim byte chunks
+// Pesan upload: chunk pertama = metadata, selanjutnya = byte data
 message UploadChunk {
   oneof payload {
     ImageMetadata metadata = 1;
-    bytes chunk_data = 2;
+    bytes chunk_data       = 2;
   }
 }
 
-// Response setelah seluruh chunk upload diterima oleh server
+// Response setelah seluruh chunk upload diterima server
 message UploadResponse {
-  bool success = 1;
-  string job_id = 2;
-  string message = 3;
-  JobStatus status = 4;
+  bool success        = 1;
+  string job_id       = 2;
+  string message      = 3;
+  JobStatus status    = 4;
 }
 
-// Request untuk menanyakan status pengerjaan
+// --- Messages untuk Status (Unary & Server Streaming) ---
+
 message StatusRequest {
   string job_id = 1;
 }
 
-// Response status pengerjaan citra
 message StatusResponse {
-  string job_id = 1;
-  JobStatus status = 2;
-  int32 progress_percent = 3;
-  string message = 4;
-  string filename = 5;
-  int64 timestamp = 6;
+  string job_id            = 1;
+  JobStatus status         = 2;
+  int32 progress_percent   = 3;
+  string message           = 4;
+  string filename          = 5;
+  int64 timestamp          = 6;
+  ProcessingType processing_type = 7;  // Jenis filter yang digunakan
 }
 
-// Request untuk mengunduh hasil citra grayscale
+// --- Messages untuk Download (Server Streaming) ---
+
 message DownloadRequest {
   string job_id = 1;
 }
 
-// Response download: server mengirim gambar hasil konversi per potongan chunk
 message DownloadChunk {
-  string filename = 1;
-  bytes chunk_data = 2;
-  bool is_last_chunk = 3;
-  int64 total_bytes = 4;
+  string filename      = 1;
+  bytes chunk_data     = 2;
+  bool is_last_chunk   = 3;
+  int64 total_bytes    = 4;
 }
 
-// Definisi Layanan Pengolahan Gambar Berbasis gRPC
+// --- Messages untuk List Jobs (Unary) ---
+
+message ListJobsRequest {
+  // Opsional: filter berdasarkan status
+  JobStatus filter_status = 1;
+  bool filter_active_only = 2;   // true = hanya QUEUED & PROCESSING
+}
+
+message JobSummary {
+  string job_id              = 1;
+  string filename            = 2;
+  JobStatus status           = 3;
+  int32 progress_percent     = 4;
+  ProcessingType processing_type = 5;
+  int64 created_at           = 6;
+  int64 completed_at         = 7;
+  int32 input_size           = 8;
+  int32 output_size          = 9;
+  string message             = 10;
+}
+
+message ListJobsResponse {
+  repeated JobSummary jobs = 1;
+  int32 total_count        = 2;
+}
+
+// --- Messages untuk Cancel Job (Unary) ---
+
+message CancelRequest {
+  string job_id = 1;
+}
+
+message CancelResponse {
+  bool success   = 1;
+  string message = 2;
+}
+
+// --- Definisi Service ---
+
 service ImageService {
-  // 1. Client Streaming: Client mengunggah gambar per chunk (64KB) ke server
+  // 1. Client Streaming: upload gambar per chunk (64KB)
   rpc UploadGambar (stream UploadChunk) returns (UploadResponse);
 
-  // 2. Unary: Client mengecek status pekerjaan berdasarkan job_id
+  // 2. Unary: cek status pekerjaan berdasarkan job_id
   rpc CekStatus (StatusRequest) returns (StatusResponse);
 
-  // 3. Server Streaming: Server mengirimkan update status secara langsung (real-time stream)
+  // 3. Server Streaming: pantau progres real-time
   rpc PantauStatus (StatusRequest) returns (stream StatusResponse);
 
-  // 4. Server Streaming: Client mengunduh gambar hasil grayscale per chunk
+  // 4. Server Streaming: unduh gambar hasil pemrosesan per chunk
   rpc UnduhGambar (DownloadRequest) returns (stream DownloadChunk);
+
+  // 5. Unary: daftar semua pekerjaan di server (dengan filter opsional)
+  rpc ListJobs (ListJobsRequest) returns (ListJobsResponse);
+
+  // 6. Unary: batalkan pekerjaan yang sedang dalam antrean
+  rpc BatalkanJob (CancelRequest) returns (CancelResponse);
 }

@@ -17,18 +17,20 @@ import grpc
 
 from protos import image_service_pb2 as pb
 from protos import image_service_pb2_grpc as pb_grpc
-from server.worker import ImageJobManager
+from server.worker import ImageJobManager, PROCESSING_TYPE_NAMES
 
 CHUNK_SIZE = 64 * 1024  # 64 KB per chunk
 
 
 class ImageServiceServicer(pb_grpc.ImageServiceServicer):
     """
-    Implementasi layanan gRPC ImageService dengan 4 metode RPC:
-    1. UploadGambar (Client Streaming RPC)
-    2. CekStatus    (Unary RPC)
-    3. PantauStatus (Server Streaming RPC)
-    4. UnduhGambar  (Server Streaming RPC)
+    Implementasi layanan gRPC ImageService dengan 6 metode RPC:
+    1. UploadGambar  (Client Streaming RPC)
+    2. CekStatus     (Unary RPC)
+    3. PantauStatus  (Server Streaming RPC)
+    4. UnduhGambar   (Server Streaming RPC)
+    5. ListJobs      (Unary RPC)
+    6. BatalkanJob   (Unary RPC)
     """
 
     def __init__(self, job_manager: ImageJobManager, simulate_slow_first_attempt: bool = False):
@@ -109,6 +111,7 @@ class ImageServiceServicer(pb_grpc.ImageServiceServicer):
                 )
 
             new_job_id = f"JOB-{uuid.uuid4().hex[:8].upper()}"
+            processing_type = metadata.processing_type if metadata.processing_type else pb.PROC_GRAYSCALE
             record, is_dup = self.job_manager.register_or_get_job(
                 request_id=request_id,
                 job_id=new_job_id,
@@ -116,6 +119,7 @@ class ImageServiceServicer(pb_grpc.ImageServiceServicer):
                 file_format=metadata.file_format,
                 staged_input_path=staged_input_path,
                 input_size=total_bytes,
+                processing_type=processing_type,
             )
             # ImageJobManager telah memindahkan file atau menghapus file duplikat.
             staged_input_path = None
@@ -134,6 +138,7 @@ class ImageServiceServicer(pb_grpc.ImageServiceServicer):
             self._seen_slow_requests.add(request_id)
             time.sleep(2.5)
 
+        filter_label = PROCESSING_TYPE_NAMES.get(processing_type, "Grayscale")
         if is_dup:
             msg = (
                 f"[DEDUPLIKASI AT-MOST-ONCE] Request ID {request_id[:8]}... sudah pernah "
@@ -142,7 +147,7 @@ class ImageServiceServicer(pb_grpc.ImageServiceServicer):
         else:
             msg = (
                 f"Gambar '{record.filename}' ({record.input_size} bytes) berhasil diterima "
-                f"dan masuk antrean dengan ID {record.job_id}."
+                f"dan masuk antrean dengan ID {record.job_id}. Filter: {filter_label}."
             )
 
         return pb.UploadResponse(
@@ -171,6 +176,7 @@ class ImageServiceServicer(pb_grpc.ImageServiceServicer):
             message=rec.message,
             filename=rec.filename,
             timestamp=int(rec.updated_at * 1000),
+            processing_type=rec.processing_type,
         )
 
     def PantauStatus(self, request, context):
@@ -202,6 +208,7 @@ class ImageServiceServicer(pb_grpc.ImageServiceServicer):
                     message=rec.message,
                     filename=rec.filename,
                     timestamp=int(rec.updated_at * 1000),
+                    processing_type=rec.processing_type,
                 )
 
             if rec.status in (pb.STATUS_COMPLETED, pb.STATUS_FAILED, pb.STATUS_CANCELLED):
@@ -212,7 +219,7 @@ class ImageServiceServicer(pb_grpc.ImageServiceServicer):
     def UnduhGambar(self, request, context):
         """
         4. Server Streaming RPC:
-        Mengirimkan file citra hasil konversi grayscale kembali ke client
+        Mengirimkan file citra hasil konversi kembali ke client
         secara bertahap per potongan chunk (64 KB).
         """
         rec = self.job_manager.get_job(request.job_id)
@@ -251,6 +258,42 @@ class ImageServiceServicer(pb_grpc.ImageServiceServicer):
                     is_last_chunk=is_last,
                     total_bytes=total_bytes,
                 )
+
+    def ListJobs(self, request, context):
+        """
+        5. Unary RPC:
+        Mengembalikan daftar seluruh pekerjaan yang terdaftar di server,
+        dengan dukungan filter berdasarkan status atau hanya job aktif.
+        """
+        jobs = self.job_manager.list_jobs(
+            filter_status=request.filter_status,
+            active_only=request.filter_active_only,
+        )
+        summaries = []
+        for rec in jobs:
+            summaries.append(pb.JobSummary(
+                job_id=rec.job_id,
+                filename=rec.filename,
+                status=rec.status,
+                progress_percent=rec.progress_percent,
+                processing_type=rec.processing_type,
+                created_at=int(rec.created_at * 1000),
+                completed_at=int(rec.completed_at * 1000) if rec.completed_at else 0,
+                input_size=rec.input_size,
+                output_size=rec.output_size,
+                message=rec.message,
+            ))
+        return pb.ListJobsResponse(jobs=summaries, total_count=len(summaries))
+
+    def BatalkanJob(self, request, context):
+        """
+        6. Unary RPC:
+        Membatalkan pekerjaan yang sedang dalam antrean (QUEUED atau PROCESSING).
+        """
+        success, msg = self.job_manager.cancel_job(request.job_id)
+        if not success and "tidak ditemukan" in msg:
+            context.abort(grpc.StatusCode.NOT_FOUND, msg)
+        return pb.CancelResponse(success=success, message=msg)
 
 
 def create_server(
@@ -310,6 +353,8 @@ def main():
     print("=" * 65)
     print(f"[SERVER AKTIF] gRPC ImageService berjalan pada {args.host}:{args.port}")
     print(f"[KONFIGURASI]  ThreadPool gRPC: {args.rpc_workers} | Image Worker Pool: {args.img_workers}")
+    print(f"[RPC METHODS]  UploadGambar | CekStatus | PantauStatus | UnduhGambar | ListJobs | BatalkanJob")
+    print(f"[FILTER]       Grayscale | Blur | Sepia | Invert | Edge Detect | Sharpen")
     print("=" * 65)
     try:
         server.wait_for_termination()
